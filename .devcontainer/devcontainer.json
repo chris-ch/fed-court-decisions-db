@@ -1,0 +1,28 @@
+{
+	"build": { "dockerfile": "Dockerfile" }
+	, "remoteUser": "python"
+	,
+	"containerUser": "python",
+	"features": {
+	  "ghcr.io/devcontainers-extra/features/starship:1": {
+		  "version": "latest"
+	  }
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"ms-python.python",
+				"hashicorp.terraform",
+				"ms-azuretools.vscode-docker",
+				"mark-tucker.aws-cli-configure",
+				"ms-toolsai.jupyter",
+				"amazonwebservices.aws-toolkit-vscode",
+				"tamasfe.even-better-toml"
+			]
+		}
+	}
+	, "updateContentCommand": "[ -f packages.txt ] && sudo xargs apt install -y <packages.txt; echo '✅ Packages installed and Requirements met'"
+	, "postCreateCommand": "bash .devcontainer/startup.sh"
+  	, "postStartCommand": "sudo chown -R $(id -u):$(id -g) /workspaces/$(basename \"$PWD\") || (echo 'chown failed' && ls -l /workspaces/$(basename \"$PWD\") && id)"
+	, "postAttachCommand": "echo 'eval \"$(starship init bash)\"\neval \"$(direnv hook bash)\"' >> ~/.bashrc"
+}

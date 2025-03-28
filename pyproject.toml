@@ -1,0 +1,67 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fed-court-decisions-db"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "Christophe", email = "christophe.alexandre@pm.me" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = []
+
+[project.urls]
+Documentation = "https://github.com/Christophe/fed-court-decisions-db#readme"
+Issues = "https://github.com/Christophe/fed-court-decisions-db/issues"
+Source = "https://github.com/Christophe/fed-court-decisions-db"
+
+[tool.hatch.version]
+path = "src/fed_court_decisions_db/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/fed_court_decisions_db tests}"
+
+[tool.hatch.envs.fed-court-decisions-db-env]
+type = "virtual"
+path = ".venv"
+dependencies = [
+  "pyarrow>=19.0.1",
+  "pandas>=2.2.3",
+  "matplotlib>=3.10.1",
+  # ... other environment-specific dependencies
+]
+
+[tool.coverage.run]
+source_pkgs = ["fed_court_decisions_db", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/fed_court_decisions_db/__about__.py",
+]
+
+[tool.coverage.paths]
+fed_court_decisions_db = ["src/fed_court_decisions_db", "*/fed-court-decisions-db/src/fed_court_decisions_db"]
+tests = ["tests", "*/fed-court-decisions-db/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
