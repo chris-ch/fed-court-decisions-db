@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  dev:
+    # Build your existing Dockerfile here
+    build:
+      context: ..
+      dockerfile: ./.devcontainer/Dockerfile
+    # Mount your local workspace
+    volumes:
+      - ..:/workspace:cached
+      - /var/run/docker.sock:/var/run/docker.sock
+    # (Optional) If your dev container needs environment variables:
+    environment:
+      - NODE_ENV=development
+      - PYTHONUNBUFFERED=1
+    command: sleep infinity
+    networks:
+      - dev-network
+    # Make sure to depend on opensearch so it starts first
+    depends_on:
+      - opensearch
+
+  opensearch:
+    image: opensearchproject/opensearch:2.6.0
+    container_name: opensearch-dev
+    # Forward the container ports to your host
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    environment:
+      # Single-node mode
+      discovery.type: "single-node"
+      # Disable the security plugin so you don't have to deal with auth locally
+      plugins.security.disabled: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    # For quick local testing, you typically run as root
+    user: "0:0"
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge
+
+volumes:
+  opensearch-data:

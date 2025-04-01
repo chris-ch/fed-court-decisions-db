@@ -1,0 +1,4 @@
+{
+    "dev.containers.dockerComposePath": "docker compose" ,
+    "docker-compose.version": "2"
+}
