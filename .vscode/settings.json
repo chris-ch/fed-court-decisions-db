@@ -1,4 +1,3 @@
 {
-    "dev.containers.dockerComposePath": "docker compose" ,
-    "docker-compose.version": "2"
+    "python.defaultInterpreterPath": ".venv/bin/python",
 }
