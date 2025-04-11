@@ -1,7 +1,9 @@
-FROM  python:3.12-bookworm
+FROM  python:3.13-bookworm
 
 ARG USER_NAME=python
 ARG USER_UID=1000
+
+ARG DOCKER_GID=133
 ARG USER_GID=$USER_UID
 
 RUN \
@@ -26,6 +28,13 @@ RUN /usr/sbin/groupadd --gid ${USER_GID} ${USER_NAME} \
     && /bin/echo ${USER_NAME} ALL=\(root\) NOPASSWD:ALL > /etc/sudoers.d/${USER_NAME} \
     && chmod 0440 /etc/sudoers.d/${USER_NAME}
     
+RUN if getent group docker > /dev/null; then \
+    groupmod -g ${DOCKER_GID} docker; \
+  else \
+    groupadd -g ${DOCKER_GID} docker; \
+  fi \
+  && usermod -aG docker ${USER_NAME}
+
 USER ${USER_NAME}
 
 WORKDIR /home/${USER_NAME}

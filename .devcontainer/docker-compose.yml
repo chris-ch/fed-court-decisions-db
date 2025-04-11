@@ -6,6 +6,9 @@ services:
     build:
       context: ..
       dockerfile: ./.devcontainer/Dockerfile
+      args:
+        DOCKER_GID: "${DOCKER_GID:-133}"
+        USER_NAME: "python"
     # Mount your local workspace
     volumes:
       - ..:/workspace:cached
@@ -44,8 +47,6 @@ services:
         hard: -1
     volumes:
       - opensearch-data:/usr/share/opensearch/data
-    # For quick local testing, you typically run as root
-    user: "0:0"
     networks:
       - dev-network
 
