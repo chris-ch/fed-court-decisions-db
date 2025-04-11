@@ -13,7 +13,7 @@ services:
     volumes:
       - ..:/workspace:cached
       - /var/run/docker.sock:/var/run/docker.sock
-    # (Optional) If your dev container needs environment variables:
+      - ~/.ssh:/home/python/.ssh:ro
     environment:
       - NODE_ENV=development
       - PYTHONUNBUFFERED=1
