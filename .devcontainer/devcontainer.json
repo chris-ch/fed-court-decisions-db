@@ -3,7 +3,7 @@
 	, "dockerComposeFile": "docker-compose.yml"
   	, "service": "dev"
     , "workspaceFolder": "/workspace"
-	, "forwardPorts": [ 9200, 9600 ]
+	, "forwardPorts": []
 	, "remoteUser": "python"
 	, "shutdownAction": "stopCompose"
 	, "containerUser": "python"
