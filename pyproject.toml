@@ -42,10 +42,14 @@ type = "virtual"
 path = ".venv"
 dependencies = [
   "ipykernel",
-  "pyarrow>=19.0.1",
-  "pandas>=2.2.3",
-  "matplotlib>=3.10.1",
-  # ... other environment-specific dependencies
+  "pyarrow >=19.0.1",
+  "pandas >=2.2.3",
+  "matplotlib >=3.10.1",
+  "nltk >=3.9",
+  "opensearch-py >=2.8",
+  "sentence_transformers >=4.0",
+  "huggingface_hub[hf_xet]",
+  "ipywidgets"
 ]
 
 [tool.coverage.run]
