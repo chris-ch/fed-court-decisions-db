@@ -49,6 +49,7 @@ dependencies = [
   "opensearch-py >=2.8",
   "sentence_transformers >=4.0",
   "huggingface_hub[hf_xet]",
+  "openai >=1.74",
   "ipywidgets"
 ]
 
