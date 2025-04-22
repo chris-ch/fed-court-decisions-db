@@ -175,3 +175,4 @@ cython_debug/
 *.parquet
 data/
 .envrc
+embedding-service/onnx_model/
