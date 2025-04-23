@@ -1,3 +1,4 @@
+# Copying relevant nodel files
 cp -R data/onnx_model embedding-service/.
 
 # Build the Docker image
@@ -17,3 +18,5 @@ docker tag sentence-embedding-lambda:latest $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amaz
 
 # Push the Docker image to ECR
 docker push $ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com/sentence-embedding-lambda:latest
+
+# Machine requirements: Mem 2048 GB, timeout 3 min, Storage 2048 GB
