@@ -3,17 +3,30 @@ import numpy as np
 import onnxruntime as ort
 from transformers import AutoTokenizer
 from pathlib import Path
+import os
 
-# Paths to ONNX model and tokenizer (inside Lambda's /tmp or bundled directory)
-MODEL_PATH = "/opt/model.onnx"  # Use /opt for Lambda layers
+# Paths to ONNX model and tokenizer
+MODEL_PATH = "/opt/model.onnx"
 TOKENIZER_PATH = "/opt/tokenizer"
 
 def lambda_handler(event, context):
     try:
-        # Load tokenizer
-        tokenizer = AutoTokenizer.from_pretrained(TOKENIZER_PATH)
+        # Verify tokenizer directory exists
+        if not os.path.isdir(TOKENIZER_PATH):
+            raise FileNotFoundError(f"Tokenizer directory not found: {TOKENIZER_PATH}")
+
+        # Log tokenizer directory contents for debugging
+        print(f"Tokenizer directory contents: {os.listdir(TOKENIZER_PATH)}")
+
+        # Load tokenizer from local directory
+        tokenizer = AutoTokenizer.from_pretrained(
+            TOKENIZER_PATH,
+            local_files_only=True  # Force local files only
+        )
 
         # Load ONNX model
+        if not os.path.isfile(MODEL_PATH):
+            raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
         session = ort.InferenceSession(MODEL_PATH)
 
         # Parse input sentences from event
@@ -23,7 +36,11 @@ def lambda_handler(event, context):
         if not sentences:
             return {
                 "statusCode": 400,
-                "body": json.dumps({"error": "No sentences provided"})
+                "body": json.dumps({"error": "No sentences provided"}),
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*"
+                }
             }
 
         # Tokenize sentences
@@ -46,11 +63,12 @@ def lambda_handler(event, context):
             "body": json.dumps({"embeddings": embeddings}),
             "headers": {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"  # For CORS if needed
+                "Access-Control-Allow-Origin": "*"
             }
         }
 
     except Exception as e:
+        print(f"Error: {str(e)}")
         return {
             "statusCode": 500,
             "body": json.dumps({"error": str(e)}),
