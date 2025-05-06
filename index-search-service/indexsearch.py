@@ -1,52 +1,52 @@
 import os
-import boto3
 import json
-from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth
+import boto3
+import base64
 
 # Environment variables
-HOST = os.environ["AWS_OPENSEARCH_ENDPOINT"]
-INDEX_NAME = os.environ["AWS_OPENSEARCH_INDEX_NAME"]
+DB_CLUSTER_ARN = os.environ["AURORA_CLUSTER_ARN"]
+DB_SECRET_ARN = os.environ["AURORA_SECRET_ARN"]
+DB_NAME = os.environ["AURORA_DB_NAME"]
+
 DDB_TABLE = os.environ.get("DDB_TABLE_NAME", "manual-fed-court-decisions")
 TOP_K = int(os.getenv("TOP_MATCHES", "10"))
 
-# AWS clients/resources
-_session = boto3.Session()
-awsauth = AWSV4SignerAuth(_session.get_credentials(), _session.region_name, service="aoss")
+# AWS clients
+rds_data = boto3.client("rds-data")
+dynamodb = boto3.client("dynamodb")
 
-OPENSEARCH = OpenSearch(
-    hosts=[{"host": HOST, "port": 443}],
-    http_auth=awsauth,
-    use_ssl=True,
-    verify_certs=True,
-    connection_class=RequestsHttpConnection,
-    http_compress=True,
-    timeout=30,
-)
 
-dynamodb = boto3.client('dynamodb')
+def query_top_k_embeddings(vector):
+    # Convert Python list to PostgreSQL vector format
+    pg_vector_str = "[" + ",".join(f"{x:.6f}" for x in vector) + "]"
+    
+    sql = f"""
+        SELECT doc_id, chunk_id
+        FROM embeddings
+        ORDER BY embedding <-> '{pg_vector_str}'::vector
+        LIMIT {TOP_K};
+    """
+    response = rds_data.execute_statement(
+        secretArn=DB_SECRET_ARN,
+        resourceArn=DB_CLUSTER_ARN,
+        database=DB_NAME,
+        sql=sql
+    )
+
+    results = []
+    for row in response.get("records", []):
+        doc_id = row[0]['stringValue']
+        results.append(doc_id)
+    return results
 
 
 def lambda_handler(event, _ctx):
     enriched_mappings = []
 
     for vec in event.get("embeddings", []):
-        # 1. Query OpenSearch
-        resp = OPENSEARCH.search(
-            index=INDEX_NAME,
-            body={"size": TOP_K,
-                  "query": {"knn": {"embedding": {"vector": vec, "k": TOP_K}}}
-            }
-        )
+        docrefs = list(dict.fromkeys(query_top_k_embeddings(vec)))  # Deduplicate, preserve order
 
-        seen = set()
-        docrefs = []
-        for hit in resp["hits"]["hits"]:
-            ref = hit["_source"]["doc_id"]
-            if ref not in seen:
-                seen.add(ref)
-                docrefs.append(ref)
-
-        # 2. Batch fetch metadata with escaped reserved keywords
+        # Fetch metadata from DynamoDB
         meta_map = {}
         if docrefs:
             keys = [{'docref': {'S': ref}} for ref in docrefs]
@@ -68,12 +68,9 @@ def lambda_handler(event, _ctx):
                 for item in items
             }
 
-        # 3. Enrich and assemble
         enriched = []
         for ref in docrefs:
-            entry = {'docref': ref,
-                     'text_compressed': None,
-                     'url': None}
+            entry = {'docref': ref, 'text_compressed': None, 'url': None}
             if ref in meta_map:
                 entry.update(meta_map[ref])
             enriched.append(entry)
