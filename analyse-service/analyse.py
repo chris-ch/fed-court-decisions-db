@@ -26,6 +26,7 @@ def lambda_handler(event, context):
         message_prompt_system = body.get("message_prompt_system", "You are a legal assistant who answers based only on provided documents.")
         message_prompt_user_prefix = body.get("message_prompt_user_prefix", "Provide a legal opinion based on the attached documents regarding the following case:")
         sentences = body.get("sentences", [])
+        top_k = body.get("top_k", 5)
     except json.JSONDecodeError as e:
         print(f"Error decoding body: {e}")
         return {
@@ -57,7 +58,7 @@ def lambda_handler(event, context):
         FunctionName='manual-index-search',
         InvocationType='RequestResponse',
         Payload=json.dumps({
-            "embeddings": embeddings
+            "embeddings": embeddings, "top_k": top_k
         })
     )
     body2 = json.loads(response2['Payload'].read())
@@ -78,7 +79,7 @@ def lambda_handler(event, context):
         context = "\n\n".join(
             [f"{label_decision} {doc['docref']}:\n{decompress_text(doc['text_compressed'])}" for doc in relevant_docs]
         )
-
+        print(f"size of context: {len(context)} characters")
         try:
             response = oai_client.chat.completions.create(
                 model="gpt-4.1-mini",

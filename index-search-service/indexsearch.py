@@ -1,7 +1,6 @@
 import os
 import json
 import boto3
-import base64
 
 # Environment variables
 DB_CLUSTER_ARN = os.environ["AURORA_CLUSTER_ARN"]
@@ -9,14 +8,13 @@ DB_SECRET_ARN = os.environ["AURORA_SECRET_ARN"]
 DB_NAME = os.environ["AURORA_DB_NAME"]
 
 DDB_TABLE = os.environ.get("DDB_TABLE_NAME", "manual-fed-court-decisions")
-TOP_K = int(os.getenv("TOP_MATCHES", "10"))
 
 # AWS clients
 rds_data = boto3.client("rds-data")
 dynamodb = boto3.client("dynamodb")
 
 
-def query_top_k_embeddings(vector):
+def query_top_k_embeddings(vector, top_k):
     # Convert Python list to PostgreSQL vector format
     pg_vector_str = "[" + ",".join(f"{x:.6f}" for x in vector) + "]"
     
@@ -24,7 +22,7 @@ def query_top_k_embeddings(vector):
         SELECT doc_id, chunk_id
         FROM embeddings
         ORDER BY embedding <-> '{pg_vector_str}'::vector
-        LIMIT {TOP_K};
+        LIMIT {top_k};
     """
     response = rds_data.execute_statement(
         secretArn=DB_SECRET_ARN,
@@ -42,9 +40,9 @@ def query_top_k_embeddings(vector):
 
 def lambda_handler(event, _ctx):
     enriched_mappings = []
-
+    top_k = int(event.get("top_k", os.getenv("DEFAULT_TOP_K", "5")))
     for vec in event.get("embeddings", []):
-        docrefs = list(dict.fromkeys(query_top_k_embeddings(vec)))  # Deduplicate, preserve order
+        docrefs = list(dict.fromkeys(query_top_k_embeddings(vec, top_k)))  # Deduplicate, preserve order
 
         # Fetch metadata from DynamoDB
         meta_map = {}
