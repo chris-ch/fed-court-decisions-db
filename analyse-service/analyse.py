@@ -72,12 +72,11 @@ def lambda_handler(event, context):
         for doc in relevant_docs:
             cleaned_docs.append({
                 "docref": doc["docref"],
-                "url": doc.get("url"),
-                "text": decompress_text(doc["text_compressed"])
+                "url": doc.get("url")
             })
 
         context = "\n\n".join(
-            [f"{label_decision} {doc['docref']}:\n{doc['text']}" for doc in cleaned_docs]
+            [f"{label_decision} {doc['docref']}:\n{decompress_text(doc['text_compressed'])}" for doc in relevant_docs]
         )
 
         try:
