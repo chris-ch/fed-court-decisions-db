@@ -1,13 +1,20 @@
 import json
-import numpy as np
 import onnxruntime as ort
 from transformers import AutoTokenizer
-from pathlib import Path
 import os
 
 # Paths to ONNX model and tokenizer
 MODEL_PATH = "/opt/model.onnx"
 TOKENIZER_PATH = "/opt/tokenizer"
+
+# Load tokenizer from local directory
+tokenizer = AutoTokenizer.from_pretrained(
+    TOKENIZER_PATH,
+    local_files_only=True  # Force local files only
+)
+
+session = ort.InferenceSession(MODEL_PATH)
+
 
 def lambda_handler(event, context):
     try:
@@ -15,19 +22,9 @@ def lambda_handler(event, context):
         if not os.path.isdir(TOKENIZER_PATH):
             raise FileNotFoundError(f"Tokenizer directory not found: {TOKENIZER_PATH}")
 
-        # Log tokenizer directory contents for debugging
-        print(f"Tokenizer directory contents: {os.listdir(TOKENIZER_PATH)}")
-
-        # Load tokenizer from local directory
-        tokenizer = AutoTokenizer.from_pretrained(
-            TOKENIZER_PATH,
-            local_files_only=True  # Force local files only
-        )
-
         # Load ONNX model
         if not os.path.isfile(MODEL_PATH):
             raise FileNotFoundError(f"Model file not found: {MODEL_PATH}")
-        session = ort.InferenceSession(MODEL_PATH)
 
         # Parse input sentences from event
         body = json.loads(event.get("body", "{}"))
